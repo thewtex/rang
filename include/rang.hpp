@@ -139,6 +139,32 @@ namespace rang_implementation {
         return termMode;
     }
 
+    template<typename _CharT, typename _Traits>
+    inline FILE* stdio_file(const std::basic_streambuf<_CharT, _Traits>* sbuf) noexcept
+    {
+        return nullptr;
+    }
+
+    inline FILE* stdio_file(const std::wstreambuf* sbuf) noexcept
+    {
+        if(sbuf == std::wcout.rdbuf()) {
+            return stdout;
+        } else if(sbuf == std::wcerr.rdbuf() || sbuf == std::wclog.rdbuf()) {
+            return stderr;
+        }
+        return nullptr;
+    }
+
+    inline FILE* stdio_file(const std::streambuf* sbuf) noexcept
+    {
+        if(sbuf == std::cout.rdbuf()) {
+            return stdout;
+        } else if(sbuf == std::cerr.rdbuf() || sbuf == std::clog.rdbuf()) {
+            return stderr;
+        }
+        return nullptr;
+    }
+
     inline bool supportsColor() noexcept
     {
 #if defined(OS_LINUX) || defined(OS_MAC)
@@ -211,40 +237,38 @@ namespace rang_implementation {
     }
 #endif
 
-    inline bool isTerminal(const std::streambuf *osbuf) noexcept
+    template<typename _CharT, typename _Traits>
+    inline bool isTerminal(std::basic_streambuf<_CharT, _Traits>* osbuf) noexcept
     {
-        using std::cerr;
-        using std::clog;
-        using std::cout;
-#if defined(OS_LINUX) || defined(OS_MAC)
-        if (osbuf == cout.rdbuf()) {
+        FILE* ioFile = stdio_file(osbuf);
+    #if defined(OS_LINUX) || defined(OS_MAC)
+        if ( ioFile == stdout ) {
             static const bool cout_term = isatty(fileno(stdout)) != 0;
             return cout_term;
-        } else if (osbuf == cerr.rdbuf() || osbuf == clog.rdbuf()) {
+        } else if ( ioFile == stderr ) {
             static const bool cerr_term = isatty(fileno(stderr)) != 0;
             return cerr_term;
         }
-#elif defined(OS_WIN)
-        if (osbuf == cout.rdbuf()) {
+    #elif defined(OS_WIN)
+        if ( ioFile == stdout ) {
             static const bool cout_term
               = (_isatty(_fileno(stdout)) || isMsysPty(_fileno(stdout)));
             return cout_term;
-        } else if (osbuf == cerr.rdbuf() || osbuf == clog.rdbuf()) {
+        } else if ( ioFile == stderr ) {
             static const bool cerr_term
               = (_isatty(_fileno(stderr)) || isMsysPty(_fileno(stderr)));
             return cerr_term;
         }
-#endif
+    #endif
         return false;
     }
 
     template <typename T>
-    using enableStd = typename std::enable_if<
-      std::is_same<T, rang::style>::value || std::is_same<T, rang::fg>::value
-        || std::is_same<T, rang::bg>::value || std::is_same<T, rang::fgB>::value
-        || std::is_same<T, rang::bgB>::value,
-      std::ostream &>::type;
-
+    using enableRang = typename std::enable_if< std::is_same<T, rang::style>::value ||
+                                                std::is_same<T, rang::fg>::value ||
+                                                std::is_same<T, rang::bg>::value ||
+                                                std::is_same<T, rang::fgB>::value ||
+                                                std::is_same<T, rang::bgB>::value,T >::type;
 
 #ifdef OS_WIN
 
@@ -268,19 +292,22 @@ namespace rang_implementation {
         gray    = 7
     };
 
-    inline HANDLE getConsoleHandle(const std::streambuf *osbuf) noexcept
+    template<typename _CharT, typename _Traits>
+    inline HANDLE getConsoleHandle(const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
     {
-        if (osbuf == std::cout.rdbuf()) {
+        FILE* ioFile = stdio_file(osbuf);
+        if (ioFile == stdout) {
             static const HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
             return hStdout;
-        } else if (osbuf == std::cerr.rdbuf() || osbuf == std::clog.rdbuf()) {
+        } else if (ioFile == stderr) {
             static const HANDLE hStderr = GetStdHandle(STD_ERROR_HANDLE);
             return hStderr;
         }
         return INVALID_HANDLE_VALUE;
     }
 
-    inline bool setWinTermAnsiColors(const std::streambuf *osbuf) noexcept
+    template<typename _CharT, typename _Traits>
+    inline bool setWinTermAnsiColors(const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
     {
         HANDLE h = getConsoleHandle(osbuf);
         if (h == INVALID_HANDLE_VALUE) {
@@ -297,16 +324,15 @@ namespace rang_implementation {
         return true;
     }
 
-    inline bool supportsAnsi(const std::streambuf *osbuf) noexcept
+    template<typename _CharT, typename _Traits>
+    inline bool supportsAnsi(const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
     {
-        using std::cerr;
-        using std::clog;
-        using std::cout;
-        if (osbuf == cout.rdbuf()) {
+        FILE* ioFile = stdio_file(osbuf);
+        if (ioFile == stdout) {
             static const bool cout_ansi
               = (isMsysPty(_fileno(stdout)) || setWinTermAnsiColors(osbuf));
             return cout_ansi;
-        } else if (osbuf == cerr.rdbuf() || osbuf == clog.rdbuf()) {
+        } else if (ioFile == stderr) {
             static const bool cerr_ansi
               = (isMsysPty(_fileno(stderr)) || setWinTermAnsiColors(osbuf));
             return cerr_ansi;
@@ -417,14 +443,14 @@ namespace rang_implementation {
         return attrib;
     }
 
-    template <typename T>
-    inline void setWinColorAnsi(std::ostream &os, T const value)
+    template<typename _CharT, typename _Traits,typename T,typename = enableRang<T> >
+    inline void setWinColorAnsi(std::basic_ostream<_CharT, _Traits> &os, T const value)
     {
         os << "\033[" << static_cast<int>(value) << "m";
     }
 
-    template <typename T>
-    inline void setWinColorNative(std::ostream &os, T const value)
+    template<typename _CharT, typename _Traits,typename T,typename = enableRang<T> >
+    inline void setWinColorNative(std::basic_ostream<_CharT, _Traits> &os, T const value)
     {
         const HANDLE h = getConsoleHandle(os.rdbuf());
         if (h != INVALID_HANDLE_VALUE) {
@@ -435,8 +461,8 @@ namespace rang_implementation {
         }
     }
 
-    template <typename T>
-    inline enableStd<T> setColor(std::ostream &os, T const value)
+    template<typename _CharT, typename _Traits,typename T,typename = enableRang<T> >
+    inline std::basic_ostream<_CharT, _Traits>& setColor(std::basic_ostream<_CharT, _Traits> &os, T const value)
     {
         if (winTermMode() == winTerm::Auto) {
             if (supportsAnsi(os.rdbuf())) {
@@ -452,17 +478,16 @@ namespace rang_implementation {
         return os;
     }
 #else
-    template <typename T>
-    inline enableStd<T> setColor(std::ostream &os, T const value)
+    template<typename _CharT, typename _Traits,typename T,typename = enableRang<T> >
+    inline std::basic_ostream<_CharT, _Traits>& setColor(std::basic_ostream<_CharT, _Traits> &os, T const value)
     {
         return os << "\033[" << static_cast<int>(value) << "m";
     }
 #endif
 }  // namespace rang_implementation
 
-template <typename T>
-inline rang_implementation::enableStd<T> operator<<(std::ostream &os,
-                                                    const T value)
+template<typename _CharT, typename _Traits,typename T,typename = rang_implementation::enableRang<T> >
+inline std::basic_ostream<_CharT, _Traits>& operator<<(std::basic_ostream<_CharT, _Traits>& os,const T& value)
 {
     const control option = rang_implementation::controlMode();
     switch (option) {
