@@ -508,49 +508,48 @@ namespace rang_implementation {
     }
 #endif
 
-    template <typename _CharT, typename _Traits, typename T>
+    template <typename T>
     class Cursor {
         Cursor() {}
         friend T;
+    };
 
-    public:
-        friend std::basic_ostream<_CharT, _Traits> &
-        operator<<(std::basic_ostream<_CharT, _Traits> &os,
-                   Cursor<_CharT, _Traits, T> &&base)
-        {
-            const auto &&drv    = static_cast<T &&>(base);
-            const auto executor = [&]() -> std::ostream & {
+    template <typename _CharT, typename _Traits, typename T>
+    std::basic_ostream<_CharT, _Traits> &
+    operator<<(std::basic_ostream<_CharT, _Traits> &os, Cursor<T> &&base)
+    {
+        const auto &&drv    = static_cast<T &&>(base);
+        const auto executor = [&]() -> std::ostream & {
 #if defined(OS_LINUX) || defined(OS_MAC)
-                return drv.execAnsi(os, drv);
+            return drv.execAnsi(os, drv);
 #elif defined(OS_WIN)
-                if (winTermMode() == winTerm::Auto) {
-                    if (supportsAnsi(os.rdbsuf())) {
-                        return drv.execAnsi(os, drv);
-                    } else {
-                        return drv.execNative(os, drv);
-                    }
-                } else if (winTermMode() == winTerm::Ansi) {
+            if (winTermMode() == winTerm::Auto) {
+                if (supportsAnsi(os.rdbsuf())) {
                     return drv.execAnsi(os, drv);
                 } else {
                     return drv.execNative(os, drv);
                 }
-#endif
-                return os;
-            };
-
-            const control option = rang_implementation::controlMode();
-            switch (option) {
-                case control::Auto:
-                    return rang_implementation::supportsColor()
-                        && rang_implementation::isTerminal(os.rdbuf())
-                      ? executor()
-                      : os;
-                case control::Force: return executor();
-                default: return os;
+            } else if (winTermMode() == winTerm::Ansi) {
+                return drv.execAnsi(os, drv);
+            } else {
+                return drv.execNative(os, drv);
             }
+#endif
             return os;
+        };
+
+        const control option = rang_implementation::controlMode();
+        switch (option) {
+            case control::Auto:
+                return rang_implementation::supportsColor()
+                    && rang_implementation::isTerminal(os.rdbuf())
+                  ? executor()
+                  : os;
+            case control::Force: return executor();
+            default: return os;
         }
-    };
+        return os;
+    }
 }  // namespace rang_implementation
 
 template <typename _CharT, typename _Traits, typename T,
@@ -582,17 +581,15 @@ inline void setControlMode(const control value) noexcept
 
 namespace cursor {
 
-    template <typename _CharT, typename _Traits>
-    struct show final
-        : public rang_implementation::Cursor<_CharT, _Traits,
-                                             show<_CharT, _Traits>> {
-
+    struct show final : public rang_implementation::Cursor<show> {
+        template <typename _CharT, typename _Traits>
         std::basic_ostream<_CharT, _Traits> &
         execAnsi(std::basic_ostream<_CharT, _Traits> &os, const show &c) const
         {
             return os << "\E[?" << 25 << 'h';
         }
 #if defined(OS_WIN)
+        template <typename _CharT, typename _Traits>
         std::basic_ostream<_CharT, _Traits> &
         execNative(std::basic_ostream<_CharT, _Traits> &os, const show &c) const
         {
@@ -608,16 +605,15 @@ namespace cursor {
 #endif
     };
 
-    template <typename _CharT, typename _Traits>
-    struct hide final
-        : public rang_implementation::Cursor<_CharT, _Traits,
-                                             hide<_CharT, _Traits>> {
+    struct hide final : public rang_implementation::Cursor<hide> {
+        template <typename _CharT, typename _Traits>
         std::basic_ostream<_CharT, _Traits> &
         execAnsi(std::basic_ostream<_CharT, _Traits> &os, const hide &c) const
         {
             return os << "\E[?" << 25 << 'l';
         }
 #if defined(OS_WIN)
+        template <typename _CharT, typename _Traits>
         std::basic_ostream<_CharT, _Traits> &
         execNative(std::basic_ostream<_CharT, _Traits> &os, const hide &c) const
         {
