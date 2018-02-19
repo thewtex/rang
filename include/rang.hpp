@@ -139,9 +139,9 @@ namespace rang_implementation {
         return termMode;
     }
 
-    template <typename _CharT, typename _Traits>
+    template <typename CharT, typename Traits>
     inline FILE *
-    stdio_file(const std::basic_streambuf<_CharT, _Traits> *sbuf) noexcept
+    stdio_file(const std::basic_streambuf<CharT, Traits> *sbuf) noexcept
     {
         return nullptr;
     }
@@ -249,9 +249,8 @@ namespace rang_implementation {
 
 #endif
 
-    template <typename _CharT, typename _Traits>
-    inline bool
-    isTerminal(std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
+    template <typename CharT, typename Traits>
+    inline bool isTerminal(std::basic_streambuf<CharT, Traits> *osbuf) noexcept
     {
         FILE *ioFile = stdio_file(osbuf);
 #if defined(OS_LINUX) || defined(OS_MAC)
@@ -305,9 +304,9 @@ namespace rang_implementation {
         gray    = 7
     };
 
-    template <typename _CharT, typename _Traits>
-    inline HANDLE getConsoleHandle(
-      const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
+    template <typename CharT, typename Traits>
+    inline HANDLE
+    getConsoleHandle(const std::basic_streambuf<CharT, Traits> *osbuf) noexcept
     {
         FILE *ioFile = stdio_file(osbuf);
         if (ioFile == stdout) {
@@ -320,9 +319,9 @@ namespace rang_implementation {
         return INVALID_HANDLE_VALUE;
     }
 
-    template <typename _CharT, typename _Traits>
+    template <typename CharT, typename Traits>
     inline bool setWinTermAnsiColors(
-      const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
+      const std::basic_streambuf<CharT, Traits> *osbuf) noexcept
     {
         HANDLE h = getConsoleHandle(osbuf);
         if (h == INVALID_HANDLE_VALUE) {
@@ -339,9 +338,9 @@ namespace rang_implementation {
         return true;
     }
 
-    template <typename _CharT, typename _Traits>
+    template <typename CharT, typename Traits>
     inline bool
-    supportsAnsi(const std::basic_streambuf<_CharT, _Traits> *osbuf) noexcept
+    supportsAnsi(const std::basic_streambuf<CharT, Traits> *osbuf) noexcept
     {
         FILE *ioFile = stdio_file(osbuf);
         if (ioFile == stdout) {
@@ -459,17 +458,17 @@ namespace rang_implementation {
         return attrib;
     }
 
-    template <typename _CharT, typename _Traits, typename T,
+    template <typename CharT, typename Traits, typename T,
               typename = enableRang<T>>
-    inline void setWinColorAnsi(std::basic_ostream<_CharT, _Traits> &os,
+    inline void setWinColorAnsi(std::basic_ostream<CharT, Traits> &os,
                                 T const value)
     {
         os << "\033[" << static_cast<int>(value) << "m";
     }
 
-    template <typename _CharT, typename _Traits, typename T,
+    template <typename CharT, typename Traits, typename T,
               typename = enableRang<T>>
-    inline void setWinColorNative(std::basic_ostream<_CharT, _Traits> &os,
+    inline void setWinColorNative(std::basic_ostream<CharT, Traits> &os,
                                   T const value)
     {
         const HANDLE h = getConsoleHandle(os.rdbuf());
@@ -480,10 +479,10 @@ namespace rang_implementation {
         }
     }
 
-    template <typename _CharT, typename _Traits, typename T,
+    template <typename CharT, typename Traits, typename T,
               typename = enableRang<T>>
-    inline std::basic_ostream<_CharT, _Traits> &
-    setColor(std::basic_ostream<_CharT, _Traits> &os, T const value)
+    inline std::basic_ostream<CharT, Traits> &
+    setColor(std::basic_ostream<CharT, Traits> &os, T const value)
     {
         if (winTermMode() == winTerm::Auto) {
             if (supportsAnsi(os.rdbuf())) {
@@ -499,10 +498,10 @@ namespace rang_implementation {
         return os;
     }
 #else
-    template <typename _CharT, typename _Traits, typename T,
+    template <typename CharT, typename Traits, typename T,
               typename = enableRang<T>>
-    inline std::basic_ostream<_CharT, _Traits> &
-    setColor(std::basic_ostream<_CharT, _Traits> &os, T const value)
+    inline std::basic_ostream<CharT, Traits> &
+    setColor(std::basic_ostream<CharT, Traits> &os, T const value)
     {
         return os << "\033[" << static_cast<int>(value) << "m";
     }
@@ -514,9 +513,9 @@ namespace rang_implementation {
         friend T;
     };
 
-    template <typename _CharT, typename _Traits, typename T>
-    std::basic_ostream<_CharT, _Traits> &
-    operator<<(std::basic_ostream<_CharT, _Traits> &os, Cursor<T> &&base)
+    template <typename CharT, typename Traits, typename T>
+    std::basic_ostream<CharT, Traits> &
+    operator<<(std::basic_ostream<CharT, Traits> &os, Cursor<T> &&base)
     {
         const auto &&drv    = static_cast<T &&>(base);
         const auto executor = [&]() -> std::ostream & {
@@ -552,10 +551,10 @@ namespace rang_implementation {
     }
 }  // namespace rang_implementation
 
-template <typename _CharT, typename _Traits, typename T,
+template <typename CharT, typename Traits, typename T,
           typename = rang_implementation::enableRang<T>>
-inline std::basic_ostream<_CharT, _Traits> &
-operator<<(std::basic_ostream<_CharT, _Traits> &os, const T &value)
+inline std::basic_ostream<CharT, Traits> &
+operator<<(std::basic_ostream<CharT, Traits> &os, const T &value)
 {
     const control option = rang_implementation::controlMode();
     switch (option) {
@@ -582,16 +581,16 @@ inline void setControlMode(const control value) noexcept
 namespace cursor {
 
     struct show final : public rang_implementation::Cursor<show> {
-        template <typename _CharT, typename _Traits>
-        std::basic_ostream<_CharT, _Traits> &
-        execAnsi(std::basic_ostream<_CharT, _Traits> &os, const show &c) const
+        template <typename CharT, typename Traits>
+        std::basic_ostream<CharT, Traits> &
+        execAnsi(std::basic_ostream<CharT, Traits> &os, const show &c) const
         {
             return os << "\E[?" << 25 << 'h';
         }
 #if defined(OS_WIN)
-        template <typename _CharT, typename _Traits>
-        std::basic_ostream<_CharT, _Traits> &
-        execNative(std::basic_ostream<_CharT, _Traits> &os, const show &c) const
+        template <typename CharT, typename Traits>
+        std::basic_ostream<CharT, Traits> &
+        execNative(std::basic_ostream<CharT, Traits> &os, const show &c) const
         {
             const HANDLE h = getConsoleHandle(os.rdbuf());
             if (h != INVALID_HANDLE_VALUE) {
@@ -606,16 +605,16 @@ namespace cursor {
     };
 
     struct hide final : public rang_implementation::Cursor<hide> {
-        template <typename _CharT, typename _Traits>
-        std::basic_ostream<_CharT, _Traits> &
-        execAnsi(std::basic_ostream<_CharT, _Traits> &os, const hide &c) const
+        template <typename CharT, typename Traits>
+        std::basic_ostream<CharT, Traits> &
+        execAnsi(std::basic_ostream<CharT, Traits> &os, const hide &c) const
         {
             return os << "\E[?" << 25 << 'l';
         }
 #if defined(OS_WIN)
-        template <typename _CharT, typename _Traits>
-        std::basic_ostream<_CharT, _Traits> &
-        execNative(std::basic_ostream<_CharT, _Traits> &os, const hide &c) const
+        template <typename CharT, typename Traits>
+        std::basic_ostream<CharT, Traits> &
+        execNative(std::basic_ostream<CharT, Traits> &os, const hide &c) const
         {
             const HANDLE h = getConsoleHandle(os.rdbuf());
             if (h != INVALID_HANDLE_VALUE) {
