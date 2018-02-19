@@ -517,21 +517,21 @@ namespace rang_implementation {
     std::basic_ostream<CharT, Traits> &
     operator<<(std::basic_ostream<CharT, Traits> &os, Cursor<T> &&base)
     {
-        const auto &&drv    = static_cast<T &&>(base);
-        const auto executor = [&]() -> std::ostream & {
+        const auto &&drv     = static_cast<T &&>(base);
+        const auto setCursor = [&]() -> std::ostream & {
 #if defined(OS_LINUX) || defined(OS_MAC)
-            return drv.execAnsi(os, drv);
+            drv.execAnsi(os, drv);
 #elif defined(OS_WIN)
             if (winTermMode() == winTerm::Auto) {
-                if (supportsAnsi(os.rdbsuf())) {
-                    return drv.execAnsi(os, drv);
+                if (supportsAnsi(os.rdbuf())) {
+                    drv.execAnsi(os, drv);
                 } else {
-                    return drv.execNative(os, drv);
+                    drv.execNative(os, drv);
                 }
             } else if (winTermMode() == winTerm::Ansi) {
-                return drv.execAnsi(os, drv);
+                drv.execAnsi(os, drv);
             } else {
-                return drv.execNative(os, drv);
+                drv.execNative(os, drv);
             }
 #endif
             return os;
@@ -542,9 +542,9 @@ namespace rang_implementation {
             case control::Auto:
                 return rang_implementation::supportsColor()
                     && rang_implementation::isTerminal(os.rdbuf())
-                  ? executor()
+                  ? setCursor()
                   : os;
-            case control::Force: return executor();
+            case control::Force: return setCursor();
             default: return os;
         }
         return os;
@@ -582,48 +582,46 @@ namespace cursor {
 
     struct show final : public rang_implementation::Cursor<show> {
         template <typename CharT, typename Traits>
-        std::basic_ostream<CharT, Traits> &
-        execAnsi(std::basic_ostream<CharT, Traits> &os, const show &c) const
+        void execAnsi(std::basic_ostream<CharT, Traits> &os,
+                      const show &c) const
         {
-            return os << "\E[?" << 25 << 'h';
+            os << "\E[?" << 25 << 'h';
         }
 #if defined(OS_WIN)
         template <typename CharT, typename Traits>
-        std::basic_ostream<CharT, Traits> &
-        execNative(std::basic_ostream<CharT, Traits> &os, const show &c) const
+        void execNative(std::basic_ostream<CharT, Traits> &os,
+                        const show &c) const noexcept
         {
-            const HANDLE h = getConsoleHandle(os.rdbuf());
+            const HANDLE h = rang_implementation::getConsoleHandle(os.rdbuf());
             if (h != INVALID_HANDLE_VALUE) {
                 CONSOLE_CURSOR_INFO info;
                 info.dwSize   = 100;
                 info.bVisible = TRUE;
-                SetConsoleCursorInfo(consoleHandle, &info);
+                SetConsoleCursorInfo(h, &info);
             }
-            return os;
         }
 #endif
     };
 
     struct hide final : public rang_implementation::Cursor<hide> {
         template <typename CharT, typename Traits>
-        std::basic_ostream<CharT, Traits> &
-        execAnsi(std::basic_ostream<CharT, Traits> &os, const hide &c) const
+        void execAnsi(std::basic_ostream<CharT, Traits> &os,
+                      const hide &c) const
         {
-            return os << "\E[?" << 25 << 'l';
+            os << "\E[?" << 25 << 'l';
         }
 #if defined(OS_WIN)
         template <typename CharT, typename Traits>
-        std::basic_ostream<CharT, Traits> &
-        execNative(std::basic_ostream<CharT, Traits> &os, const hide &c) const
+        void execNative(std::basic_ostream<CharT, Traits> &os,
+                        const hide &c) const noexcept
         {
-            const HANDLE h = getConsoleHandle(os.rdbuf());
+            const HANDLE h = rang_implementation::getConsoleHandle(os.rdbuf());
             if (h != INVALID_HANDLE_VALUE) {
                 CONSOLE_CURSOR_INFO info;
                 info.dwSize   = 100;
                 info.bVisible = FALSE;
-                SetConsoleCursorInfo(consoleHandle, &info);
+                SetConsoleCursorInfo(h, &info);
             }
-            return os;
         }
 #endif
     };
