@@ -166,7 +166,7 @@ namespace rang_implementation {
         return nullptr;
     }
 
-    inline bool supportsColor() noexcept
+    inline bool isSupportedTerm() noexcept
     {
 #if defined(OS_LINUX) || defined(OS_MAC)
 
@@ -250,7 +250,7 @@ namespace rang_implementation {
 #endif
 
     template <typename CharT, typename Traits>
-    inline bool isTerminal(std::basic_streambuf<CharT, Traits> *osbuf) noexcept
+    inline bool isTTY(std::basic_streambuf<CharT, Traits> *osbuf) noexcept
     {
         FILE *ioFile = stdio_file(osbuf);
 #if defined(OS_LINUX) || defined(OS_MAC)
@@ -541,8 +541,8 @@ namespace rang_implementation {
         const control option = rang_implementation::controlMode();
         switch (option) {
             case control::Auto:
-                return rang_implementation::supportsColor()
-                    && rang_implementation::isTerminal(os.rdbuf())
+                return rang_implementation::isSupportedTerm()
+                    && rang_implementation::isTTY(os.rdbuf())
                   ? useCursor()
                   : os;
             case control::Force: return useCursor();
@@ -560,8 +560,8 @@ operator<<(std::basic_ostream<CharT, Traits> &os, const T &value)
     const control option = rang_implementation::controlMode();
     switch (option) {
         case control::Auto:
-            return rang_implementation::supportsColor()
-                && rang_implementation::isTerminal(os.rdbuf())
+            return rang_implementation::isSupportedTerm()
+                && rang_implementation::isTTY(os.rdbuf())
               ? rang_implementation::setColor(os, value)
               : os;
         case control::Force: return rang_implementation::setColor(os, value);
