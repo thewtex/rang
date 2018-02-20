@@ -11,7 +11,8 @@ void printHeading(const string &heading)
          << endl;
 }
 
-void test_colors(ostream &os, const winTerm opt)
+template <typename CharT, typename Traits>
+void test_colors(std::basic_ostream<CharT, Traits> &os, const winTerm opt)
 {
     setWinTermMode(opt);
 
@@ -76,8 +77,11 @@ void enumerateWinTerms()
          << style::reset << bg::reset << fg::reset << '\n';
     cout << "_________________________________________________________________";
     test_colors(cout, winTerm::Auto);
+    test_colors(wcout, winTerm::Auto);
     test_colors(clog, winTerm::Auto);
+    test_colors(wclog, winTerm::Auto);
     test_colors(cerr, winTerm::Auto);
+    test_colors(wcerr, winTerm::Auto);
     cout << "-------------------------------------------------------------\n\n";
 
     cout << endl;
@@ -87,8 +91,11 @@ void enumerateWinTerms()
          << style::reset << bg::reset << fg::reset << '\n';
     cout << "_________________________________________________________________";
     test_colors(cout, winTerm::Ansi);
+    test_colors(wcout, winTerm::Ansi);
     test_colors(clog, winTerm::Ansi);
+    test_colors(wclog, winTerm::Ansi);
     test_colors(cerr, winTerm::Ansi);
+    test_colors(wcerr, winTerm::Ansi);
     cout << "-------------------------------------------------------------\n\n";
 
     cout << endl;
@@ -98,8 +105,11 @@ void enumerateWinTerms()
          << style::reset << bg::reset << fg::reset << '\n';
     cout << "_________________________________________________________________";
     test_colors(cout, winTerm::Native);
+    test_colors(wcout, winTerm::Native);
     test_colors(clog, winTerm::Native);
+    test_colors(wclog, winTerm::Native);
     test_colors(cerr, winTerm::Native);
+    test_colors(wcerr, winTerm::Native);
     cout << "-------------------------------------------------------------\n\n";
 }
 
