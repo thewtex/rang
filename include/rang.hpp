@@ -41,6 +41,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <initializer_list>
 
 namespace rang {
 
@@ -123,6 +124,12 @@ enum class control { Off = 0, Auto = 1, Force = 2 };
  *  Native: Force use Native API
  */
 enum class winTerm { Auto = 0, Ansi = 1, Native = 2 };
+
+template <typename... T>
+void init(T &... os)
+{
+    (void) std::initializer_list<int>{ (os.setf(std::ios::unitbuf), 0)... };
+}
 
 // Do not open, part of implementation
 namespace rang_implementation {
