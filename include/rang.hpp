@@ -507,6 +507,7 @@ namespace rang_implementation {
     }
 #endif
 
+    // CRTP base class
     template <typename T>
     class Cursor {
         Cursor() {}
@@ -515,10 +516,10 @@ namespace rang_implementation {
 
     template <typename CharT, typename Traits, typename T>
     std::basic_ostream<CharT, Traits> &
-    operator<<(std::basic_ostream<CharT, Traits> &os, Cursor<T> &&base)
+    operator<<(std::basic_ostream<CharT, Traits> &os, const Cursor<T> &&base)
     {
-        const auto &&drv     = static_cast<T &&>(base);
-        const auto setCursor = [&]() -> std::ostream & {
+        const auto &&drv     = static_cast<T const &&>(base);
+        const auto useCursor = [&]() -> std::basic_ostream<CharT, Traits> & {
 #if defined(OS_LINUX) || defined(OS_MAC)
             drv.execAnsi(os, drv);
 #elif defined(OS_WIN)
@@ -542,9 +543,9 @@ namespace rang_implementation {
             case control::Auto:
                 return rang_implementation::supportsColor()
                     && rang_implementation::isTerminal(os.rdbuf())
-                  ? setCursor()
+                  ? useCursor()
                   : os;
-            case control::Force: return setCursor();
+            case control::Force: return useCursor();
             default: return os;
         }
         return os;
@@ -589,7 +590,7 @@ namespace cursor {
         }
 #if defined(OS_WIN)
         template <typename CharT, typename Traits>
-        void execNative(std::basic_ostream<CharT, Traits> &os,
+        void execNative(const std::basic_ostream<CharT, Traits> &os,
                         const show &c) const noexcept
         {
             const HANDLE h = rang_implementation::getConsoleHandle(os.rdbuf());
@@ -612,7 +613,7 @@ namespace cursor {
         }
 #if defined(OS_WIN)
         template <typename CharT, typename Traits>
-        void execNative(std::basic_ostream<CharT, Traits> &os,
+        void execNative(const std::basic_ostream<CharT, Traits> &os,
                         const hide &c) const noexcept
         {
             const HANDLE h = rang_implementation::getConsoleHandle(os.rdbuf());
