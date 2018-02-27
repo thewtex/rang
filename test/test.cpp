@@ -351,12 +351,3 @@ TEST_CASE("Rang printing with control::Force and clog")
         REQUIRE(s.size() < output.size());
     }
 }
-
-TEST_CASE("Rang init sets unitbuf properly")
-{
-    const auto initialFlags = std::cout.flags();
-    rang::init(std::cout);
-    const auto appliedFlags  = std::cout.flags();
-    const auto expectedFlags = initialFlags | std::ios::unitbuf;
-    REQUIRE(appliedFlags == expectedFlags);
-}
