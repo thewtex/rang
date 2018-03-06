@@ -276,6 +276,32 @@ namespace rang_implementation {
         return false;
     }
 
+    template <typename CharT, typename Traits>
+    class streamScopeGuard {
+        std::basic_ostream<CharT, Traits> &os;
+        const std::ios_base::fmtflags flags;
+        const std::streamsize width;
+        const std::streamsize precision;
+
+    public:
+        streamScopeGuard(std::basic_ostream<CharT, Traits> &_os)
+            : os(_os),
+              flags(os.flags()),
+              width(os.width()),
+              precision(os.precision())
+        {
+            os.width(0);
+            os.precision(0);
+        }
+
+        ~streamScopeGuard()
+        {
+            os.flags(flags);
+            os.width(width);
+            os.precision(precision);
+        }
+    };
+
     template <typename T>
     using enableRang = typename std::enable_if<
       std::is_same<T, rang::style>::value || std::is_same<T, rang::fg>::value
@@ -464,6 +490,8 @@ namespace rang_implementation {
     inline void setWinColorAnsi(std::basic_ostream<CharT, Traits> &os,
                                 T const value)
     {
+        streamScopeGuard<CharT, Traits> guard(os);
+        os.flags(std::ios::dec | std::ios::left);
         os << "\033[" << static_cast<int>(value) << "m";
     }
 
@@ -504,6 +532,8 @@ namespace rang_implementation {
     inline std::basic_ostream<CharT, Traits> &
     setColor(std::basic_ostream<CharT, Traits> &os, T const value)
     {
+        streamScopeGuard<CharT, Traits> guard(os);
+        os.flags(std::ios::dec | std::ios::left);
         return os << "\033[" << static_cast<int>(value) << "m";
     }
 #endif
@@ -577,17 +607,23 @@ operator<<(std::basic_ostream<CharT, Traits> &os,
     const auto useCursor = [&]() -> std::basic_ostream<CharT, Traits> & {
         const auto &&drv = static_cast<T const &&>(base);
 #if defined(OS_LINUX) || defined(OS_MAC)
+        streamScopeGuard<CharT, Traits> guard(os);
+        os.flags(std::ios::dec | std::ios::left);
         drv.execAnsi(os);
         os.flush();
 #elif defined(OS_WIN)
         if (winTermMode() == winTerm::Auto) {
             if (supportsAnsi(os.rdbuf())) {
+                streamScopeGuard<CharT, Traits> guard(os);
+                os.flags(std::ios::dec | std::ios::left);
                 drv.execAnsi(os);
                 os.flush();
             } else {
                 drv.execNative(os);
             }
         } else if (winTermMode() == winTerm::Ansi) {
+            streamScopeGuard<CharT, Traits> guard(os);
+            os.flags(std::ios::dec | std::ios::left);
             drv.execAnsi(os);
             os.flush();
         } else {
