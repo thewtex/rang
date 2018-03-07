@@ -277,14 +277,14 @@ namespace rang_implementation {
     }
 
     template <typename CharT, typename Traits>
-    class streamScopeGuard {
+    class StreamScopeGuard {
         std::basic_ostream<CharT, Traits> &os;
         const std::ios_base::fmtflags flags;
         const std::streamsize width;
         const std::streamsize precision;
 
     public:
-        streamScopeGuard(std::basic_ostream<CharT, Traits> &_os)
+        StreamScopeGuard(std::basic_ostream<CharT, Traits> &_os)
             : os(_os),
               flags(os.flags()),
               width(os.width()),
@@ -294,7 +294,7 @@ namespace rang_implementation {
             os.precision(0);
         }
 
-        ~streamScopeGuard()
+        ~StreamScopeGuard()
         {
             os.flags(flags);
             os.width(width);
@@ -490,7 +490,7 @@ namespace rang_implementation {
     inline void setWinColorAnsi(std::basic_ostream<CharT, Traits> &os,
                                 T const value)
     {
-        streamScopeGuard<CharT, Traits> guard(os);
+        StreamScopeGuard<CharT, Traits> guard(os);
         os.flags(std::ios::dec | std::ios::left);
         os << "\033[" << static_cast<int>(value) << "m";
     }
@@ -532,7 +532,7 @@ namespace rang_implementation {
     inline std::basic_ostream<CharT, Traits> &
     setColor(std::basic_ostream<CharT, Traits> &os, T const value)
     {
-        streamScopeGuard<CharT, Traits> guard(os);
+        StreamScopeGuard<CharT, Traits> guard(os);
         os.flags(std::ios::dec | std::ios::left);
         return os << "\033[" << static_cast<int>(value) << "m";
     }
@@ -596,6 +596,8 @@ namespace cursor {
 
 }  // namespace rang
 
+
+// Applies cursor operation to given ostream
 template <typename CharT, typename Traits, typename T>
 std::basic_ostream<CharT, Traits> &
 operator<<(std::basic_ostream<CharT, Traits> &os,
@@ -607,14 +609,14 @@ operator<<(std::basic_ostream<CharT, Traits> &os,
     const auto useCursor = [&]() -> std::basic_ostream<CharT, Traits> & {
         const auto &&drv = static_cast<T const &&>(base);
 #if defined(OS_LINUX) || defined(OS_MAC)
-        streamScopeGuard<CharT, Traits> guard(os);
+        StreamScopeGuard<CharT, Traits> guard(os);
         os.flags(std::ios::dec | std::ios::left);
         drv.execAnsi(os);
         os.flush();
 #elif defined(OS_WIN)
         if (winTermMode() == winTerm::Auto) {
             if (supportsAnsi(os.rdbuf())) {
-                streamScopeGuard<CharT, Traits> guard(os);
+                StreamScopeGuard<CharT, Traits> guard(os);
                 os.flags(std::ios::dec | std::ios::left);
                 drv.execAnsi(os);
                 os.flush();
@@ -622,7 +624,7 @@ operator<<(std::basic_ostream<CharT, Traits> &os,
                 drv.execNative(os);
             }
         } else if (winTermMode() == winTerm::Ansi) {
-            streamScopeGuard<CharT, Traits> guard(os);
+            StreamScopeGuard<CharT, Traits> guard(os);
             os.flags(std::ios::dec | std::ios::left);
             drv.execAnsi(os);
             os.flush();
@@ -642,6 +644,7 @@ operator<<(std::basic_ostream<CharT, Traits> &os,
     }
 }
 
+// Applies color operation to given ostream
 template <typename CharT, typename Traits, typename T,
           typename = rang::rang_implementation::enableRang<T>>
 inline std::basic_ostream<CharT, Traits> &
