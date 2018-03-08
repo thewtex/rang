@@ -666,4 +666,8 @@ operator<<(std::basic_ostream<CharT, Traits> &os, const T &value)
 #undef OS_WIN
 #undef OS_MAC
 
+#define RANG_VERSION_MAJOR 4
+#define RANG_VERSION_MINOR 0
+#define RANG_VERSION_PATCH 0
+
 #endif /* ifndef RANG_DOT_HPP */
