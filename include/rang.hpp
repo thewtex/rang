@@ -1,6 +1,13 @@
 #ifndef RANG_DOT_HPP
 #define RANG_DOT_HPP
 
+#define RANG_VERSION_MAJOR 4
+#define RANG_VERSION_MINOR 0
+#define RANG_VERSION_PATCH 0
+
+#define RANG_VER_CHECK(major,minor,patch) (((major) << 16) | ((minor) << 8) | (patch))
+#define RANG_VER RANG_VER_CHECK(RANG_VERSION_MAJOR,RANG_VERSION_MINOR,RANG_VERSION_PATCH)
+
 #if defined(__unix__) || defined(__unix) || defined(__linux__)
 #define OS_LINUX
 #elif defined(WIN32) || defined(_WIN32) || defined(_WIN64)
@@ -665,9 +672,5 @@ operator<<(std::basic_ostream<CharT, Traits> &os, const T &value)
 #undef OS_LINUX
 #undef OS_WIN
 #undef OS_MAC
-
-#define RANG_VERSION_MAJOR 4
-#define RANG_VERSION_MINOR 0
-#define RANG_VERSION_PATCH 0
 
 #endif /* ifndef RANG_DOT_HPP */
