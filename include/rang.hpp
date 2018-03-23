@@ -5,8 +5,10 @@
 #define RANG_VERSION_MINOR 0
 #define RANG_VERSION_PATCH 0
 
-#define RANG_VER_CHECK(major,minor,patch) (((major) << 16) | ((minor) << 8) | (patch))
-#define RANG_VER RANG_VER_CHECK(RANG_VERSION_MAJOR,RANG_VERSION_MINOR,RANG_VERSION_PATCH)
+#define RANG_VER_CHECK(major, minor, patch)                                    \
+    (((major) << 16) | ((minor) << 8) | (patch))
+#define RANG_VER                                                               \
+    RANG_VER_CHECK(RANG_VERSION_MAJOR, RANG_VERSION_MINOR, RANG_VERSION_PATCH)
 
 #if defined(__unix__) || defined(__unix) || defined(__linux__)
 #define OS_LINUX
@@ -581,7 +583,7 @@ inline void setControlMode(const control value) noexcept
 namespace cursor {
 
     struct setVisible final : public rang_implementation::Cursor<setVisible> {
-        bool visible = true;
+        const bool visible;
         setVisible(const bool v = true) : visible(v) {}
 
         template <typename CharT, typename Traits>
@@ -595,6 +597,30 @@ namespace cursor {
           noexcept
         {
             rang_implementation::showCursorNative(os, visible);
+        }
+#endif
+    };
+
+    struct setPos final : public rang_implementation::Cursor<setPos> {
+        const short x;
+        const short y;
+        setPos(const short a = 0, const short b = 0) : x(a), y(b) {}
+
+        template <typename CharT, typename Traits>
+        void execAnsi(std::basic_ostream<CharT, Traits> &os) const
+        {
+            os << "\033[" << x << ';' << y << 'H';
+        }
+#if defined(OS_WIN)
+        template <typename CharT, typename Traits>
+        void execNative(const std::basic_ostream<CharT, Traits> &os) const
+          noexcept
+        {
+            using namespace rang_implementation;
+            const auto consoleHandle = getConsoleHandle(os.rdbuf());
+            if (consoleHandle != INVALID_HANDLE_VALUE) {
+                SetConsoleCursorPosition(consoleHandle, { y, x });
+            }
         }
 #endif
     };
