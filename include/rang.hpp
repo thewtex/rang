@@ -208,10 +208,10 @@ namespace rang_implementation {
     inline bool isMsysPty(int fd) noexcept
     {
         // Dynamic load for binary compability with old Windows
-        const auto ptrGetFileInformationByHandleEx
-          = reinterpret_cast<decltype(&GetFileInformationByHandleEx)>(
-            GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
-                           "GetFileInformationByHandleEx"));
+         const auto ptrGetFileInformationByHandleEx
+            = reinterpret_cast<decltype(&GetFileInformationByHandleEx)>(
+                reinterpret_cast< void* >(GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
+                "GetFileInformationByHandleEx")));
         if (!ptrGetFileInformationByHandleEx) {
             return false;
         }
@@ -463,6 +463,7 @@ namespace rang_implementation {
             case rang::style::crossed:
             case rang::style::dim:
             case rang::style::italic:
+            case rang::style::rblink:
             default: break;
         }
     }
