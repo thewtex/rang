@@ -20,7 +20,7 @@ install(
 #   set(CMAKE_CXX_EXTENSIONS        OFF)
 #
 #   set(rang_DIR "path/to/rangConfig.cmake/dir" CACHE PATH "Directory containing rangConfig.cmake")
-#   find_package(rang REQUIRED)
+#   find_package(rang REQUIRED CONFIG [NO_DEFAULT_PATH])
 #
 #   add_executable(some_app some_app_source.cpp)
 #   target_link_libraries(some_app rang)
